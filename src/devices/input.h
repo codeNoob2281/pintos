@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-
+void readline(char *, int);
 void input_init (void);
 void input_putc (uint8_t);
 uint8_t input_getc (void);

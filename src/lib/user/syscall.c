@@ -1,3 +1,5 @@
+#include <stdint.h>
+#include <stdlib.h>
 #include <syscall.h>
 #include "../syscall-nr.h"
 
@@ -38,8 +40,8 @@
              "pushl %[number]; int $0x30; addl $12, %%esp"      \
                : "=a" (retval)                                  \
                : [number] "i" (NUMBER),                         \
-                 [arg0] "g" (ARG0),                             \
-                 [arg1] "g" (ARG1)                              \
+                 [arg0] "r" (ARG0),                             \
+                 [arg1] "r" (ARG1)                              \
                : "memory");                                     \
           retval;                                               \
         })
@@ -54,15 +56,21 @@
              "pushl %[number]; int $0x30; addl $16, %%esp"      \
                : "=a" (retval)                                  \
                : [number] "i" (NUMBER),                         \
-                 [arg0] "g" (ARG0),                             \
-                 [arg1] "g" (ARG1),                             \
-                 [arg2] "g" (ARG2)                              \
+                 [arg0] "r" (ARG0),                             \
+                 [arg1] "r" (ARG1),                             \
+                 [arg2] "r" (ARG2)                              \
                : "memory");                                     \
           retval;                                               \
         })
 
+int
+practice (int i)
+{
+  return syscall1 (SYS_PRACTICE, i);
+}
+
 void
-halt (void) 
+halt (void)
 {
   syscall0 (SYS_HALT);
   NOT_REACHED ();
@@ -106,7 +114,7 @@ open (const char *file)
 }
 
 int
-filesize (int fd) 
+filesize (int fd)
 {
   return syscall1 (SYS_FILESIZE, fd);
 }
@@ -124,13 +132,13 @@ write (int fd, const void *buffer, unsigned size)
 }
 
 void
-seek (int fd, unsigned position) 
+seek (int fd, unsigned position)
 {
   syscall2 (SYS_SEEK, fd, position);
 }
 
 unsigned
-tell (int fd) 
+tell (int fd)
 {
   return syscall1 (SYS_TELL, fd);
 }
@@ -166,19 +174,26 @@ mkdir (const char *dir)
 }
 
 bool
-readdir (int fd, char name[READDIR_MAX_LEN + 1]) 
+readdir (int fd, char name[READDIR_MAX_LEN + 1])
 {
   return syscall2 (SYS_READDIR, fd, name);
 }
 
 bool
-isdir (int fd) 
+isdir (int fd)
 {
   return syscall1 (SYS_ISDIR, fd);
 }
 
 int
-inumber (int fd) 
+inumber (int fd)
 {
   return syscall1 (SYS_INUMBER, fd);
+}
+
+void*
+sbrk (intptr_t increment)
+{
+  /* Homework 5, Part B: YOUR CODE HERE */
+  return NULL;
 }
