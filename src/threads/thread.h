@@ -121,7 +121,7 @@ struct thread
     int nice;                           /* The nice level of thread, the higher the lower priority */
     fixed_point_t recent_cpu; /* Thread recent cpu usage */
     int priority;                       /* Priority. */
-    int64_t blocking_ticks;                /* Ticks that the thread to block. */
+    int64_t blocking_ticks;            /*记录线程剩余的阻塞时间*/
 
     struct list lock_list;              /* Locks owned by this thread. */
     int priority_to_set;                /* Priority to be set. */
@@ -181,10 +181,15 @@ struct child_message *thread_get_child_message(tid_t tid);
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
-
+/*
+声明一个用于比较线程之间优先级大小的函数
+*/
 bool thread_priority_cmp (const struct list_elem *a_, const struct list_elem *b_,
                            void *aux UNUSED);
 void thread_revolt (void);
+/*
+将一个线程插入就绪队列
+*/
 void thread_insert_ready_list (struct list_elem *elem);
 
 void thread_init (void);
@@ -209,6 +214,7 @@ void thread_yield (void);
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
+/*更新线程t的剩余阻塞时间*/
 static void thread_blocking_ticks_handler(struct thread *t, void *args UNUSED);
 
 int thread_get_priority (void);
@@ -225,7 +231,8 @@ static void thread_update_load_avg(void);
 static void thread_update_recent_cpu(struct thread*, void*);
 void thread_add_recent_cpu(void);
 
-
+/*对列表进行递归遍历*/
+void reallyNbFunction(thread_action_func* func, void* aux, list_elem* p);
 void thread_timer(bool);
 void thread_exit_with_return_value(struct intr_frame *f, int return_value);
 

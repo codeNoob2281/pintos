@@ -85,23 +85,27 @@ timer_elapsed(int64_t then)
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
+/*codenoob2281*/
 void timer_sleep(int64_t ticks)
 {
-  // int64_t start = timer_ticks ();
-
-  // ASSERT (intr_get_level () == INTR_ON);
-  // while (timer_elapsed (start) < ticks)
-  //   thread_yield ();
-  if (ticks <= 0)
-  {
-    return;
-  }
-  ASSERT(intr_get_level() == INTR_ON);
-  enum intr_level old_level = intr_disable();
-  struct thread *current_thread = thread_current();
-  current_thread->blocking_ticks = ticks;
-  thread_block();
-  intr_set_level(old_level);
+    if (ticks > 0) //休眠时间ticks>0时有效，小于0时直接跳过；
+    {
+        ASSERT(intr_get_level() == INTR_ON);
+        //获取中断前的状态保存在临时内存中，然后禁止中断的再次方式（关中断）
+        enum intr_level oldLevel = intr_disable();
+        //获取当前正在运行的线程
+        struct thread* currentThread = thread_current();
+        //设置当前正在运行的线程的阻塞时间
+        currentThread->blocking_ticks = ticks;
+        //获取当前正在运行的线程名
+        char* currentThreadName = thread_name();
+        //控制台输出线程阻塞日志
+        printf("线程%s被阻塞,阻塞时间为:%d ticks", currentThreadName, ticks);
+        //将当前线程的状态由运行改为阻塞
+        thread_block();
+        //恢复中断前的状态
+        intr_set_level(oldLevel);
+    }
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -168,27 +172,21 @@ void timer_print_stats(void)
 }
 
 /* Timer interrupt handler. */
+/*codenoob2281*/
 static void
 timer_interrupt(struct intr_frame *args UNUSED)
 {
-  ticks++;
+ //系统时钟加一
+    ticks = ticks + 1;
+
+ //保存中断前状态并禁止中断响应请求(关中断)
   enum intr_level old_level = intr_disable();
-  thread_timer(timer_ticks() % TIMER_FREQ == 0);
+  //对当前时刻的线程状态进行检测
+  thread_timer(ticks % 100 == 0);
+  //恢复中断前的状态
   intr_set_level(old_level);
-  thread_tick ();
-  // ticks++;
-  // enum intr_level old_level = intr_disable();
-  // if (thread_mlfqs)
-  // {
-  //   thread_mlfqs_increase_recent_cpu_by_one();
-  //   if (ticks % TIMER_FREQ == 0)
-  //     thread_mlfqs_update_load_avg_and_recent_cpu();
-  //   else if (ticks % 4 == 0)
-  //     thread_mlfqs_update_priority(thread_current());
-  // }
-  // thread_foreach(blocked_thread_check, NULL);
-  // intr_set_level(old_level);
-  // thread_tick();
+  //时钟加一
+  thread_tick();
 }
 
 /* Every per second to refresh load_avg and recent_cpu of all threads */

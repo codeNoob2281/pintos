@@ -103,17 +103,22 @@ struct child_message *thread_get_child_message(tid_t tid)
 }
 
 
-/* For comparing two threads by their priorities.
-   Return true if a_ points to the thread with higher priority. */
+/*
+  比较两个线程的优先级大小，
+   当线程a的优先级高于线程b时返回true 
+ */
 bool
 thread_priority_cmp (const struct list_elem *a_, const struct list_elem *b_,
                       void *aux UNUSED)
 {
   const struct thread *a = list_entry (a_, struct thread, elem);
   const struct thread *b = list_entry (b_, struct thread, elem);
-
+  /*
+  * thread_get_certain_priority函数的作用是获取线程的优先级大小
+  */
   return thread_get_certain_priority (a) > thread_get_certain_priority (b);
 }
+
 
 /* Check if current thread need to yield
    (its priority is lower than the first one in the ready list). */
@@ -130,11 +135,12 @@ thread_revolt (void)
   }
 }
 
-/* Insert a thread to the ready list in order. */
+/* 按优先级插入一个线程到就绪队列*/
 void
 thread_insert_ready_list (struct list_elem *elem)
 {
   if (!list_empty (&ready_list))
+      //调用list的方法list_instert_ordered将线程插入指定list中
     list_insert_ordered (&ready_list, elem, thread_priority_cmp, NULL);
   else
     list_push_back (&ready_list, elem);
@@ -438,25 +444,27 @@ thread_yield (void)
   intr_set_level (old_level);
 }
 
+/*对列表进行递归遍历*/
+void reallyNbFunction(thread_action_func* func, void* aux,list_elem* p)
+{
+    if (p == list_end(&all_list)) return;
+    struct thread* t = list_entry(p, struct thread, allelem);
+    func(t,aux);
+    reallyNbFunction(func, aux, list_next(p));
+}
+
+
 /* Invoke function 'func' on all threads, passing along 'aux'.
    This function must be called with interrupts off. */
 void
 thread_foreach (thread_action_func *func, void *aux)
 {
-  struct list_elem *e;
-
   ASSERT (intr_get_level () == INTR_OFF);
-
-  for (e = list_begin (&all_list); e != list_end (&all_list);
-       e = list_next (e))
-  {
-    struct thread *t = list_entry (e, struct thread, allelem);
-    func (t, aux);
-  }
+  reallyNbFunction(func, aux, list_begin(&all_list));
 }
 
 
-/* Handle blocking_ticks for each thread */
+/* 更新线程的剩余阻塞时间 */
 static void
 thread_blocking_ticks_handler(struct thread *t, void *args UNUSED)
 {
@@ -500,6 +508,10 @@ thread_get_priority (void)
 int
 thread_get_certain_priority (const struct thread *t)
 {
+    /*
+    * 由于引入捐赠值，线程的优先级计算方式为线程自身优先级加上
+    线程获得的捐赠值（如果捐赠值大于0）
+    */
   return t->priority + (thread_mlfqs ? 0 : t->max_donate) ;
 }
 
@@ -607,6 +619,8 @@ thread_timer(bool full_second){
       thread_ready_list_sort();
     }
   }
+  /*每次检测时通过thread_foreach调用 thread_blocking_ticks_handler 
+  函数更新所有线程的blocking_ticks，若 blocking_ticks 为零则唤醒这个线程。*/
   thread_foreach(thread_blocking_ticks_handler, NULL);
 }
 
